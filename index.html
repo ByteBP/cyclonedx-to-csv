@@ -1,0 +1,369 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>CycloneDX to CSV</title>
+<script>(function(){var t;try{t=localStorage.getItem('cdx2csv-theme')}catch(e){}if(!t)t=matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light';document.documentElement.dataset.theme=t})()</script>
+<style>
+:root{color-scheme:light;--bg:#f1f3f7;--sf:#fff;--s2:#f6f7fa;--bd:#dde2ea;--tx:#0f172a;--mu:#5a677c;--ac:#2447e0;--ax:#fff;--as:#e9eeff;--crit:#d92d3f;--high:#e2561d;--med:#b7791f;--low:#2f8a57;--none:#64748b;--r:10px}
+[data-theme=dark]{color-scheme:dark;--bg:#0a0e16;--sf:#111826;--s2:#162033;--bd:#25314a;--tx:#e8edf6;--mu:#93a0b6;--ac:#7f9bff;--ax:#0a1030;--as:#1a2547;--crit:#ff6b7a;--high:#ff8a52;--med:#e8b04a;--low:#52c488;--none:#93a0b6}
+*{box-sizing:border-box}[hidden]{display:none!important}
+body{margin:0;background:var(--bg);color:var(--tx);font:14px/1.5 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+.top{display:flex;align-items:center;gap:12px;padding:12px 24px;border-bottom:1px solid var(--bd);background:var(--sf);position:sticky;top:0;z-index:5}
+.brand{display:flex;align-items:center;gap:10px;font-weight:650}
+.mk{font:700 12px ui-monospace,Consolas,monospace;border:1.5px solid var(--tx);border-radius:6px;padding:2px 6px}
+.tag{font-size:11px;color:var(--mu);border:1px solid var(--bd);border-radius:99px;padding:0 8px}
+.grow{flex:1}
+main{max-width:1400px;margin:0 auto;padding:30px 24px 56px}
+h1{font-size:clamp(26px,4vw,40px);letter-spacing:-.03em;line-height:1.08;margin:0 0 10px;max-width:21ch}
+.mu{color:var(--mu)}.sm{font-size:12px;margin:8px 0 0}
+.ins{display:grid;grid-template-columns:1fr 1fr 1.25fr;gap:12px;margin-top:22px}
+.dz{position:relative;display:flex;flex-direction:column;gap:2px;justify-content:center;min-height:118px;padding:18px;border:1.5px dashed var(--bd);border-radius:var(--r);background:var(--sf);cursor:pointer}
+.dz b{font-size:15px}.dz span{color:var(--mu)}.dz em{font:12px ui-monospace,Consolas,monospace;font-style:normal;color:var(--ac);min-height:18px}
+.dz.on,.dz:focus-within{border-color:var(--ac)}.dz.has{border-style:solid;border-color:var(--ac);background:var(--as)}
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}
+.card{background:var(--sf);border:1px solid var(--bd);border-radius:var(--r);padding:16px}
+.row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+input[type=text],select,textarea{background:var(--s2);color:var(--tx);border:1px solid var(--bd);border-radius:8px;padding:7px 10px;font:inherit}
+input[type=text]{flex:1;min-width:150px}textarea{width:100%;margin-top:8px;font:12px ui-monospace,Consolas,monospace}
+.btn{background:var(--sf);color:var(--tx);border:1px solid var(--bd);border-radius:8px;padding:7px 12px;font:inherit;cursor:pointer}
+.btn:hover:not(:disabled){border-color:var(--ac)}.btn:disabled{opacity:.45;cursor:default}
+.btn.pri{background:var(--ac);color:var(--ax);border-color:var(--ac);font-weight:650}
+:focus-visible{outline:2px solid var(--ac);outline-offset:2px}
+#msg{margin-top:12px;min-height:21px}#msg.err{color:var(--crit)}
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:1px;background:var(--bd);border:1px solid var(--bd);border-radius:var(--r);overflow:hidden;margin-top:8px}
+.st{background:var(--sf);padding:14px 16px}.st b{display:block;font:650 28px/1.15 ui-monospace,Consolas,monospace;letter-spacing:-.03em}.st span{color:var(--mu);font-size:12.5px}
+.st.wide{grid-column:span 2}.st.wide b{font-size:15px}
+.rib{display:flex;height:10px;border-radius:5px;overflow:hidden;background:var(--s2);margin:10px 0 6px}.rib i{display:block}
+.lg{display:flex;gap:12px;flex-wrap:wrap;font-size:12px;color:var(--mu)}.lg i{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:5px}
+.grid{display:grid;grid-template-columns:340px minmax(0,1fr);gap:16px;margin-top:16px;align-items:start}
+@media(max-width:900px){.grid,.ins{grid-template-columns:1fr}.st.wide{grid-column:auto}}
+h3{font-size:13px;margin:18px 0 8px;font-weight:650}h3:first-child{margin-top:0}
+.pf{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.pf button{text-align:left;padding:10px;background:var(--sf);color:var(--tx);border:1px solid var(--bd);border-radius:8px;font:inherit;cursor:pointer}
+.pf b{display:block;font-size:13px}.pf span{font-size:12px;color:var(--mu)}.pf .on{border-color:var(--ac);background:var(--as)}
+#cols{max-height:280px;overflow:auto;border:1px solid var(--bd);border-radius:8px;padding:4px 10px;margin-top:8px}
+.c{display:flex;justify-content:space-between;align-items:center;padding:2px 0}.c button{padding:0 7px;margin-left:3px;background:var(--sf);color:var(--tx);border:1px solid var(--bd);border-radius:5px;cursor:pointer}
+.opt{display:flex;justify-content:space-between;align-items:center;margin:7px 0;gap:8px}
+.tabs{display:flex;gap:2px;border-bottom:1px solid var(--bd);margin-bottom:12px;overflow-x:auto}
+.tabs button{background:none;border:0;border-bottom:2px solid transparent;margin-bottom:-1px;padding:8px 12px;color:var(--mu);font:inherit;cursor:pointer;white-space:nowrap}
+.tabs [aria-selected=true]{color:var(--tx);border-color:var(--ac);font-weight:650}.n{font:12px ui-monospace,Consolas,monospace;color:var(--mu);margin-left:4px}
+.tw{overflow:auto;max-height:520px;border:1px solid var(--bd);border-radius:8px;margin:10px 0}
+table{border-collapse:collapse;width:100%;font-size:12.5px}
+th,td{padding:7px 12px;border-bottom:1px solid var(--bd);text-align:left;white-space:nowrap;max-width:340px;overflow:hidden;text-overflow:ellipsis}
+td{font-family:ui-monospace,Consolas,monospace;font-size:12px}tbody tr:hover{background:var(--s2)}td a{color:var(--ac)}
+th{position:sticky;top:0;background:var(--s2);cursor:pointer;font-weight:650;user-select:none}
+th[aria-sort=ascending]::after{content:" \25B2";font-size:9px}th[aria-sort=descending]::after{content:" \25BC";font-size:9px}
+.bg{display:inline-block;padding:1px 9px;border-radius:99px;font:650 12px system-ui,sans-serif;color:var(--c);background:color-mix(in srgb,var(--c) 15%,transparent)}
+.bar{position:sticky;bottom:12px;display:flex;gap:12px;align-items:center;flex-wrap:wrap;background:var(--sf);border:1px solid var(--bd);border-radius:var(--r);padding:10px 14px;margin-top:12px;box-shadow:0 8px 28px rgba(0,0,0,.14)}
+.dot{width:9px;height:9px;border-radius:50%;background:var(--low)}.dot.w{background:var(--med)}
+.bar .row{margin-left:auto}
+</style>
+</head>
+<body>
+<header class="top">
+  <div class="brand"><span class="mk">cdx</span>CycloneDX to CSV<span class="tag">1.5 to 1.7</span></div>
+  <div class="grow"></div>
+  <button class="btn" id="theme" type="button">Dark mode</button>
+</header>
+<main>
+<section>
+  <h1>Turn an SBOM into a spreadsheet</h1>
+  <p class="mu" style="max-width:62ch;margin:0">Pick what to export, shape the columns, and download the CSV. Everything runs in your browser, and your file is never uploaded.</p>
+  <div class="ins">
+    <label class="dz" data-slot="1"><input class="sr" type="file" accept=".json,application/json"><b>Drop your SBOM here</b><span>CycloneDX JSON, or click to browse</span><em class="fn"></em></label>
+    <label class="dz" data-slot="2"><input class="sr" type="file" accept=".json,application/json"><b>Compare with another SBOM</b><span>Optional. Adds a Changes view</span><em class="fn"></em></label>
+    <div class="card">
+      <div class="row"><input type="text" id="url" placeholder="GitHub repo, GitHub file, or direct JSON URL" aria-label="URL"><button class="btn pri" id="load" type="button">Load</button></div>
+      <div class="row" style="margin-top:8px"><button class="btn" id="sample" type="button">Try a sample</button></div>
+      <details style="margin-top:8px"><summary>Paste JSON instead</summary><textarea id="paste" rows="4" aria-label="Pasted JSON"></textarea><div class="row" style="margin-top:8px"><button class="btn" id="parse" type="button">Convert pasted JSON</button></div></details>
+    </div>
+  </div>
+  <div id="msg" role="status"></div>
+</section>
+
+<section id="work" hidden>
+  <div id="stats" class="stats"></div>
+  <p class="mu sm" id="docinfo"></p>
+  <div class="grid">
+    <aside class="card">
+      <h3>Export profile</h3><div class="pf" id="pf"></div>
+      <h3>Columns</h3>
+      <div class="row"><button class="btn" id="pall" type="button">All</button><button class="btn" id="pnone" type="button">None</button><span class="mu sm" style="margin:0">Tick to include, arrows to reorder</span></div>
+      <div id="cols"></div>
+      <h3>CSV options</h3>
+      <div class="opt"><label for="delim">Delimiter</label><select id="delim"><option value=",">Comma</option><option value=";">Semicolon</option><option value="tab">Tab</option><option value="|">Pipe</option></select></div>
+      <div class="opt"><label for="join">Join multiple values with</label><select id="join"><option value="; ">; (semicolon)</option><option value=" | ">| (pipe)</option><option value=", ">, (comma)</option><option value=" ">space</option></select></div>
+      <div class="opt"><label for="nested">Include nested components</label><input type="checkbox" id="nested"></div>
+      <div class="opt"><label for="bomchk">UTF-8 BOM (helps Excel)</label><input type="checkbox" id="bomchk"></div>
+      <div class="opt"><label for="safe">Neutralize spreadsheet formulas</label><input type="checkbox" id="safe"></div>
+    </aside>
+    <div>
+      <div class="card">
+        <div class="tabs" id="tabs" role="tablist"></div>
+        <div class="row"><input type="text" id="q" placeholder="Filter rows by text" aria-label="Filter rows"><span id="facets" class="row"></span></div>
+        <div class="mu sm" id="stat"></div>
+        <div class="tw"><table id="tbl"></table></div>
+        <div class="row"><button class="btn" id="more" type="button" hidden>Show 200 more rows</button></div>
+        <p class="mu sm">License risk is a rough keyword check on license names (copyleft rates higher). It is not legal advice.</p>
+      </div>
+      <div class="bar">
+        <span class="dot" id="dot"></span><b id="spec"></b><span class="mu" id="qual"></span>
+        <div class="row"><button class="btn" id="cp" type="button">Copy CSV</button><button class="btn pri" id="dl" type="button">Download CSV</button></div>
+      </div>
+    </div>
+  </div>
+</section>
+</main>
+
+<script>
+const $=s=>document.querySelector(s);
+const NAMES=['bom.json','sbom.json','bom.cdx.json','sbom.cdx.json','cyclonedx.json','cdx.json'];
+const COLS={
+  components:['bom-ref','type','group','name','version','purl','purlType','scope','description','licenses','licenseRisk','licenseUrl','copyright','hasCopyright','authors','supplier','publisher','manufacturer','website','vcs','hashes','cpe','externalRefs','multiVersion','parent','direct'],
+  vulnerabilities:['id','source','severity','score','method','vector','cwes','description','published','updated','affects','state','justification','recommendation'],
+  dependencies:['ref','refName','dependsOn','dependsOnName'],
+  licenses:['component','version','purl','licenseId','licenseName','url','expression','copyright'],
+  changes:['status','name','before','after','purl']
+};
+const HEAVY=['bom-ref','description','cpe','externalRefs','publisher','manufacturer','vector','justification','recommendation','hashes','licenseUrl','hasCopyright','multiVersion','purlType'];
+const LINKS=['website','vcs','licenseUrl','url'];
+const FACETS={components:['type','licenseRisk','licenses','hasCopyright','multiVersion'],vulnerabilities:['severity','state'],dependencies:[],licenses:['licenseId'],changes:['status']};
+const LABEL={components:'Components',vulnerabilities:'Vulnerabilities',dependencies:'Dependencies',licenses:'Licenses',changes:'Changes'};
+const PROFILES=[
+  {id:'all',n:'Full inventory',d:'Every key component field',e:'components',c:['name','version','type','group','purl','scope','licenses','licenseRisk','copyright','authors','website','vcs','direct']},
+  {id:'sec',n:'Security audit',d:'Vulnerabilities by severity',e:'vulnerabilities',c:['id','severity','score','affects','state','cwes','published']},
+  {id:'lic',n:'License review',d:'Risk, license links, copyright',e:'components',c:['name','version','licenses','licenseRisk','licenseUrl','copyright','purl','supplier']},
+  {id:'attr',n:'Attribution notices',d:'Copyright, authors, license',e:'components',c:['name','version','licenses','copyright','authors','website','vcs']},
+  {id:'prov',n:'Provenance',d:'Source repo, site, hashes',e:'components',c:['name','version','purl','supplier','authors','website','vcs','hashes']},
+  {id:'min',n:'Minimal list',d:'Name, version, purl',e:'components',c:['name','version','purl']}
+];
+const SAMPLE={bomFormat:'CycloneDX',specVersion:'1.5',version:1,metadata:{component:{type:'application','bom-ref':'app',name:'demo-app',version:'1.0.0'}},components:[
+{type:'library','bom-ref':'a',name:'Newtonsoft.Json',version:'13.0.1',purl:'pkg:nuget/Newtonsoft.Json@13.0.1',scope:'required',licenses:[{license:{id:'MIT'}}],hashes:[{alg:'SHA-256',content:'abc123'}]},
+{type:'library','bom-ref':'b',name:'lodash',version:'4.17.20',purl:'pkg:npm/lodash@4.17.20',licenses:[{license:{id:'MIT'}}],components:[{type:'library','bom-ref':'c',name:'nested-lib',version:'0.1.0',licenses:[{expression:'MIT OR Apache-2.0'}]}]},
+{type:'library','bom-ref':'d',name:'log4j-core',version:'2.14.1',purl:'pkg:maven/org.apache.logging.log4j/log4j-core@2.14.1',licenses:[{license:{id:'Apache-2.0'}}]},
+{type:'library','bom-ref':'e',name:'gpl-lib-x',version:'2.0.1',purl:'pkg:generic/gpl-lib-x@2.0.1',licenses:[{license:{id:'GPL-3.0-only'}}]},
+{type:'library','bom-ref':'f',name:'mystery-lib',version:'1.0.0'}],
+dependencies:[{ref:'app',dependsOn:['a','b','d','e','f']},{ref:'b',dependsOn:['c']}],
+vulnerabilities:[
+{id:'CVE-2021-23337',source:{name:'NVD'},ratings:[{score:7.2,severity:'high',method:'CVSSv31',vector:'CVSS:3.1/AV:N/AC:L/PR:H/UI:N/S:U/C:H/I:H/A:H'}],cwes:[77],description:'Command injection in lodash template.',affects:[{ref:'b'}],analysis:{state:'exploitable'}},
+{id:'CVE-2021-44228',source:{name:'NVD'},ratings:[{score:10,severity:'critical',method:'CVSSv31'}],cwes:[502],description:'Remote code execution in log4j.',affects:[{ref:'d'}],analysis:{state:'exploitable'}}]};
+const SAMPLE2=JSON.parse(JSON.stringify(SAMPLE));
+SAMPLE2.components[1].version='4.17.21';SAMPLE2.components[1].purl='pkg:npm/lodash@4.17.21';SAMPLE2.components[1].components=[];
+SAMPLE2.components[2].version='2.17.1';SAMPLE2.components[2].purl='pkg:maven/org.apache.logging.log4j/log4j-core@2.17.1';
+SAMPLE2.components.push({type:'library','bom-ref':'g',name:'axios',version:'1.6.0',purl:'pkg:npm/axios@1.6.0',licenses:[{license:{id:'MIT'}}]});
+
+let S={entity:'components',profile:'',order:{},on:{},opt:{delim:',',join:'; ',nested:true,bom:true,safe:true}},bom=null,bom2=null,bomName='sbom',data={},sort={k:null,d:1},lim=100;
+for(const e in COLS){S.order[e]=[...COLS[e]];S.on[e]=COLS[e].filter(k=>!HEAVY.includes(k));}
+try{
+  const s=JSON.parse(localStorage.getItem('cdx2csv3')||'null');
+  if(s){
+    if(s.entity in COLS)S.entity=s.entity;
+    Object.assign(S.opt,s.opt);
+    for(const e in COLS){
+      if(s.order&&s.order[e]){const o=s.order[e].filter(k=>COLS[e].includes(k));S.order[e]=[...o,...COLS[e].filter(k=>!o.includes(k))];}
+      if(s.on&&s.on[e])S.on[e]=s.on[e].filter(k=>COLS[e].includes(k));
+    }
+  }
+}catch(_){}
+const save=()=>{try{localStorage.setItem('cdx2csv3',JSON.stringify(S))}catch(_){}};
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const str=(v,j)=>v==null?'':Array.isArray(v)?v.map(x=>typeof x==='object'?JSON.stringify(x):x).join(j):typeof v==='object'?JSON.stringify(v):String(v);
+const fv=(r,k)=>str(r[k],'; ')||'(none)';
+const msg=(t,err)=>{const m=$('#msg');m.textContent=t;m.className=err?'err':''};
+const avail=()=>Object.keys(COLS).filter(e=>e!=='changes'||bom2);
+const risk=a=>{const t=a.join(' ').toUpperCase();if(!t)return'unknown';if(/AGPL|SSPL|(^|[^L])GPL/.test(t))return'high';if(/LGPL|MPL|EPL|CDDL|EUPL/.test(t))return'medium';if(/UNKNOWN|NOASSERTION|SEE URL|SEE LICENSE|EULA|PROPRIETARY/.test(t))return'unknown';return'low'};
+const rank=v=>({critical:4,high:3,medium:2,low:1}[String(v).toLowerCase()]||0);
+const tone=v=>({critical:'crit',high:'high',medium:'med',low:'low',added:'low',removed:'crit',changed:'med'}[v]||'none');
+
+function extract(b,nested){
+  const idx={},all=[];
+  const root=b.metadata&&b.metadata.component,rr=root&&root['bom-ref'];
+  if(rr)idx[rr]=root;
+  const walk=(list,parent,depth)=>{for(const c of list||[]){all.push([c,parent,depth]);if(c['bom-ref'])idx[c['bom-ref']]=c;walk(c.components,c.name,depth+1);}};
+  walk(b.components,'',0);
+  const lbl=r=>{const c=idx[r];return c?c.name+(c.version?'@'+c.version:''):r};
+  const deps=b.dependencies||[],rootDeps=new Set(),hasDeps=!!(rr&&deps.length);
+  if(hasDeps)for(const d of deps)if(d.ref===rr)(d.dependsOn||[]).forEach(x=>rootDeps.add(x));
+  const lic=c=>(c.licenses||[]).map(l=>l.expression||(l.license&&(l.license.id||l.license.name))||'').filter(Boolean);
+  const rows=all.filter(x=>nested||!x[2]);
+  const nk=c=>(c.group||'')+'/'+c.name,vc={};
+  for(const [c] of all)(vc[nk(c)]=vc[nk(c)]||new Set()).add(c.version);
+  const cr=c=>c.copyright||((c.evidence&&c.evidence.copyright)||[]).map(x=>x.text).filter(Boolean).join('; ');
+  const refs=(c,t)=>(c.externalReferences||[]).filter(r=>r.type===t).map(r=>r.url);
+  const person=a=>a&&((a.name||'')+(a.email?' <'+a.email+'>':'')).trim();
+  const authors=c=>[...(c.authors||[]).map(person),...(c.author?[c.author]:[])].filter(Boolean);
+  const licUrl=c=>(c.licenses||[]).map(l=>l.license&&l.license.url).filter(Boolean);
+  const components=rows.map(([c,p])=>({'bom-ref':c['bom-ref'],type:c.type,group:c.group,name:c.name,version:c.version,purl:c.purl,
+    purlType:((c.purl||'').match(/^pkg:([^/]+)/)||[])[1],scope:c.scope,description:c.description,licenses:lic(c),licenseRisk:risk(lic(c)),licenseUrl:licUrl(c),
+    copyright:cr(c),hasCopyright:cr(c)?'yes':'no',authors:authors(c),supplier:c.supplier&&c.supplier.name,publisher:c.publisher,manufacturer:c.manufacturer&&c.manufacturer.name,
+    website:refs(c,'website'),vcs:refs(c,'vcs'),hashes:(c.hashes||[]).map(h=>h.alg+':'+h.content),cpe:c.cpe,
+    externalRefs:(c.externalReferences||[]).map(r=>r.type+':'+r.url),multiVersion:vc[nk(c)].size>1?'yes':'no',parent:p,direct:hasDeps?(rootDeps.has(c['bom-ref'])?'yes':'no'):''}));
+  const licenses=[];
+  for(const [c] of rows)for(const l of c.licenses||[]){const L=l.license||{};licenses.push({component:c.name,version:c.version,purl:c.purl,licenseId:L.id,licenseName:L.name,url:L.url,expression:l.expression,copyright:cr(c)});}
+  const vulnerabilities=(b.vulnerabilities||[]).map(v=>{
+    const r=(v.ratings||[]).slice().sort((x,y)=>(y.score||0)-(x.score||0))[0]||{},a=v.analysis||{};
+    return{id:v.id,source:v.source&&v.source.name,severity:r.severity,score:r.score,method:r.method,vector:r.vector,cwes:v.cwes,description:v.description,
+      published:v.published,updated:v.updated,affects:(v.affects||[]).map(x=>lbl(x.ref)),state:a.state,justification:a.justification,recommendation:v.recommendation};
+  });
+  const dependencies=[];
+  for(const d of deps){const t=d.dependsOn||[];
+    if(!t.length)dependencies.push({ref:d.ref,refName:lbl(d.ref),dependsOn:'',dependsOnName:''});
+    else for(const x of t)dependencies.push({ref:d.ref,refName:lbl(d.ref),dependsOn:x,dependsOnName:lbl(x)});}
+  return{components,vulnerabilities,dependencies,licenses};
+}
+function diff(A,B,nested){
+  const key=r=>r.purl?r.purl.replace(/@[^?#]*/,''):(r.group?r.group+'/':'')+r.name;
+  const map=x=>{const o={};for(const r of extract(x,nested).components)o[key(r)]=r;return o};
+  const a=map(A),b=map(B),out=[];
+  for(const k in a){
+    if(!(k in b))out.push({status:'removed',name:a[k].name,before:a[k].version,after:'',purl:a[k].purl});
+    else if(a[k].version!==b[k].version)out.push({status:'changed',name:a[k].name,before:a[k].version,after:b[k].version,purl:b[k].purl});
+  }
+  for(const k in b)if(!(k in a))out.push({status:'added',name:b[k].name,before:'',after:b[k].version,purl:b[k].purl});
+  return out;
+}
+
+function view(){
+  const e=S.entity,cols=S.order[e].filter(k=>S.on[e].includes(k)),q=$('#q').value.toLowerCase();
+  const fs=[...document.querySelectorAll('#facets select')].filter(s=>s.value);
+  let rows=(data[e]||[]).filter(r=>fs.every(s=>fv(r,s.dataset.k).toLowerCase()===s.value.toLowerCase())&&(!q||Object.values(r).some(v=>str(v,' ').toLowerCase().includes(q))));
+  if(sort.k&&cols.includes(sort.k)){
+    const k=sort.k,d=sort.d,rk=k==='severity'||k==='licenseRisk';
+    rows=rows.slice().sort((a,b)=>{const x=str(a[k],'; '),y=str(b[k],'; '),nx=parseFloat(x),ny=parseFloat(y);
+      return(rk?rank(x)-rank(y):(isNaN(nx)||isNaN(ny)?x.localeCompare(y,undefined,{numeric:true}):nx-ny))*d});
+  }
+  return{cols,rows};
+}
+function toCsv(cols,rows){
+  const d=S.opt.delim==='tab'?'\t':S.opt.delim,j=S.opt.join;
+  const cell=v=>{let s=str(v,j);if(S.opt.safe&&/^[=+\-@\t\r]/.test(s))s="'"+s;return(/["\n\r]/.test(s)||s.includes(d))?'"'+s.replace(/"/g,'""')+'"':s;};
+  return[cols.map(cell).join(d),...rows.map(r=>cols.map(k=>cell(r[k])).join(d))].join('\r\n');
+}
+
+function renderStats(){
+  const v=data.vulnerabilities,sev={};
+  v.forEach(x=>{const s=String(x.severity||'unknown').toLowerCase();sev[s]=(sev[s]||0)+1});
+  const order=['critical','high','medium','low'],keys=order.filter(k=>sev[k]).concat(Object.keys(sev).filter(k=>!order.includes(k)));
+  const rib='<div class="rib">'+keys.map(k=>`<i style="width:${sev[k]/v.length*100}%;background:var(--${tone(k)})"></i>`).join('')+'</div><div class="lg">'+keys.map(k=>`<span><i style="background:var(--${tone(k)})"></i>${sev[k]} ${esc(k)}</span>`).join('')+'</div>';
+  const n=(l,x)=>`<div class="st"><b>${x}</b><span>${l}</span></div>`;
+  $('#stats').innerHTML=n('Components',data.components.length)+n('Vulnerabilities',v.length)+n('Dependency links',data.dependencies.filter(d=>d.dependsOn).length)+
+    n('Distinct licenses',new Set(data.licenses.map(l=>l.licenseId||l.licenseName||l.expression)).size)+
+    `<div class="st wide"><span>Vulnerability severity</span>${v.length?rib:'<b>None listed</b>'}</div>`;
+}
+function renderQuality(){
+  const c=data.components,miss=(k,t)=>{const m=c.filter(r=>!str(r[k],'')).length;return m?`${m} ${t}`:''};
+  const parts=[miss('version','without a version'),miss('purl','without a purl'),miss('licenses','without a license'),miss('copyright','without copyright'),miss('authors','without an author')].filter(Boolean);
+  const md=bom.metadata||{},tl=md.tools,rc=md.component,tn=(Array.isArray(tl)?tl:(tl&&tl.components)||[]).map(x=>[x.name,x.version].filter(Boolean).join(' ')).join(', ');
+  $('#docinfo').textContent=[md.timestamp&&'Generated '+String(md.timestamp).slice(0,10),tn&&'by '+tn,rc&&'Root component: '+[rc.name,rc.version].filter(Boolean).join(' ')].filter(Boolean).join(' \u00b7 ');
+  const sv=bom.specVersion,ok=['1.5','1.6','1.7'].includes(sv);
+  $('#spec').textContent='CycloneDX '+(sv||'unknown');$('#dot').className='dot'+(ok&&c.length?'':' w');
+  $('#qual').textContent=(ok?'':'Tested with spec 1.5 to 1.7. ')+(c.length?(parts.length?parts.join(', ')+' ('+c.length+' components checked)':'All components have a version, purl and license.'):'No components found.');
+}
+const renderPf=()=>{$('#pf').innerHTML=PROFILES.map(p=>`<button type="button" data-p="${p.id}" class="${S.profile===p.id?'on':''}"><b>${p.n}</b><span>${p.d}</span></button>`).join('')};
+const renderTabs=()=>{$('#tabs').innerHTML=avail().map(e=>`<button type="button" role="tab" aria-selected="${e===S.entity}" data-e="${e}">${LABEL[e]}<span class="n">${(data[e]||[]).length}</span></button>`).join('')};
+function renderFacets(){
+  $('#facets').innerHTML=FACETS[S.entity].map(k=>{const vals=[...new Set((data[S.entity]||[]).map(r=>fv(r,k)))].sort();
+    return`<select data-k="${k}" aria-label="Filter by ${k}"><option value="">All ${k}</option>${vals.map(v=>`<option>${esc(v)}</option>`).join('')}</select>`}).join('');
+}
+function renderCols(){
+  const e=S.entity;
+  $('#cols').innerHTML=S.order[e].map((k,i)=>`<div class="c"><label><input type="checkbox" data-k="${esc(k)}" ${S.on[e].includes(k)?'checked':''}> ${esc(k)}</label><span><button type="button" data-m="${i}" data-d="-1" aria-label="Move ${esc(k)} up">\u2191</button><button type="button" data-m="${i}" data-d="1" aria-label="Move ${esc(k)} down">\u2193</button></span></div>`).join('');
+}
+function cell(k,v){
+  const t=str(v,S.opt.join);
+  if(LINKS.includes(k)&&t){const us=[].concat(v).filter(u=>/^https?:\/\//i.test(u));if(us.length)return`<td>${us.map(u=>`<a href="${esc(u)}" target="_blank" rel="noopener noreferrer">${esc(u.replace(/^https?:\/\//,''))}</a>`).join(', ')}</td>`}
+  if((k==='severity'||k==='licenseRisk'||k==='status')&&t){const l=t.toLowerCase();return`<td><span class="bg" style="--c:var(--${tone(l)})">${esc(l[0].toUpperCase()+l.slice(1))}</span></td>`}
+  return`<td title="${esc(t)}">${esc(t)}</td>`;
+}
+function render(){
+  if(!bom)return;
+  const{cols,rows}=view();
+  $('#stat').textContent=`${rows.length} of ${(data[S.entity]||[]).length} rows, ${cols.length} columns`+(rows.length>lim?`, showing the first ${lim}`:'');
+  $('#tbl').innerHTML='<thead><tr>'+cols.map(c=>`<th tabindex="0" data-k="${esc(c)}" aria-sort="${sort.k===c?(sort.d>0?'ascending':'descending'):'none'}">${esc(c)}</th>`).join('')+'</tr></thead><tbody>'+
+    rows.slice(0,lim).map(r=>'<tr>'+cols.map(k=>cell(k,r[k])).join('')+'</tr>').join('')+'</tbody>';
+  $('#more').hidden=rows.length<=lim;
+  $('#dl').textContent=`Download CSV (${rows.length} rows)`;
+  $('#dl').disabled=$('#cp').disabled=!cols.length||!rows.length;
+}
+function switchEntity(){renderTabs();renderFacets();renderCols();sort={k:null,d:1};lim=100;render();}
+function rebuild(){
+  data=extract(bom,S.opt.nested);data.changes=bom2?diff(bom,bom2,S.opt.nested):[];
+  if(!avail().includes(S.entity))S.entity='components';
+  renderStats();renderQuality();renderPf();switchEntity();
+}
+
+function ingest(text,name,slot){
+  try{
+    const b=JSON.parse(text);
+    if(!b||b.bomFormat!=='CycloneDX')throw Error('This file is not CycloneDX JSON: bomFormat is missing or different. XML is not supported yet.');
+    const z=document.querySelector(`.dz[data-slot="${slot}"]`);z.classList.add('has');z.querySelector('em').textContent=name;
+    if(slot===2){bom2=b;S.entity='changes';}else{bom=b;bomName=name||'sbom';}
+    if(!bom)return msg('Comparison file loaded. Add the baseline SBOM to see the changes.');
+    rebuild();$('#work').hidden=false;
+    msg(slot===2?'Comparison loaded. The Changes tab lists added, removed and updated components.':`Loaded CycloneDX ${b.specVersion||'(unknown version)'} with ${data.components.length} components.`);
+  }catch(e){msg(e.message,true);}
+}
+async function getText(u){const r=await fetch(u);if(!r.ok)throw Error(`Request failed (${r.status}) for ${u}`);return r.text();}
+async function fromUrl(u){
+  u=u.trim();let m;
+  if(m=u.match(/^https?:\/\/github\.com\/([^/]+)\/([^/]+)\/blob\/(.+)$/))return[await getText(`https://raw.githubusercontent.com/${m[1]}/${m[2]}/${m[3]}`),m[3].split('/').pop().replace(/\.[^.]+$/,'')];
+  if(m=u.match(/^https?:\/\/github\.com\/([^/]+)\/([^/#?]+?)(?:\.git)?(?:\/tree\/([^/]+))?\/?$/)){
+    let br=m[3];
+    if(!br){const r=await fetch(`https://api.github.com/repos/${m[1]}/${m[2]}`);if(!r.ok)throw Error(`GitHub API returned ${r.status}. The repo may be private or the rate limit was reached. Paste a link to the SBOM file instead.`);br=(await r.json()).default_branch;}
+    for(const n of NAMES){const r=await fetch(`https://raw.githubusercontent.com/${m[1]}/${m[2]}/${br}/${n}`);if(r.ok)return[await r.text(),m[2]];}
+    throw Error('No SBOM file found in the repo root (tried '+NAMES.join(', ')+'). Paste a link to the file instead.');
+  }
+  return[await getText(u),u.split('/').pop().split('?')[0].replace(/\.[^.]+$/,'')||'sbom'];
+}
+
+document.querySelectorAll('.dz').forEach(z=>{
+  const slot=+z.dataset.slot,go=f=>f&&f.text().then(t=>ingest(t,f.name.replace(/\.[^.]+$/,''),slot));
+  z.querySelector('input').onchange=e=>go(e.target.files[0]);
+  z.ondragover=e=>{e.preventDefault();z.classList.add('on')};z.ondragleave=()=>z.classList.remove('on');
+  z.ondrop=e=>{e.preventDefault();z.classList.remove('on');go(e.dataTransfer.files[0])};
+});
+$('#load').onclick=async()=>{const u=$('#url').value;if(!u.trim())return msg('Enter a URL first.',true);msg('Loading...');
+  try{const[t,n]=await fromUrl(u);ingest(t,n,1);}catch(e){msg(e.message,true);}};
+$('#url').onkeydown=e=>{if(e.key==='Enter')$('#load').click()};
+$('#parse').onclick=()=>ingest($('#paste').value,'pasted',1);
+$('#sample').onclick=()=>{ingest(JSON.stringify(SAMPLE),'sample-v1',1);ingest(JSON.stringify(SAMPLE2),'sample-v2',2);S.entity='components';rebuild();msg('Sample loaded: two versions of a demo SBOM, so the Changes tab has data too.');};
+
+$('#pf').onclick=e=>{const b=e.target.closest('button[data-p]');if(!b)return;const p=PROFILES.find(x=>x.id===b.dataset.p);
+  S.entity=p.e;S.order[p.e]=[...p.c,...S.order[p.e].filter(k=>!p.c.includes(k))];S.on[p.e]=p.c.slice();S.profile=p.id;$('#q').value='';save();renderPf();switchEntity();};
+$('#tabs').onclick=e=>{const b=e.target.closest('button[data-e]');if(!b)return;S.entity=b.dataset.e;S.profile='';$('#q').value='';save();renderPf();switchEntity();};
+const touch=()=>{S.profile='';renderPf();render();save();};
+$('#cols').onclick=e=>{const b=e.target.closest('button[data-m]');if(!b)return;const o=S.order[S.entity],i=+b.dataset.m,j=i+ +b.dataset.d;
+  if(j<0||j>=o.length)return;[o[i],o[j]]=[o[j],o[i]];renderCols();touch();};
+$('#cols').onchange=e=>{const k=e.target.dataset.k;if(!k)return;const en=S.entity;
+  if(e.target.checked){if(!S.on[en].includes(k))S.on[en].push(k);}else S.on[en]=S.on[en].filter(x=>x!==k);touch();};
+$('#pall').onclick=()=>{S.on[S.entity]=[...COLS[S.entity]];renderCols();touch();};
+$('#pnone').onclick=()=>{S.on[S.entity]=[];renderCols();touch();};
+$('#q').oninput=()=>{lim=100;render()};
+$('#facets').onchange=()=>{lim=100;render()};
+$('#more').onclick=()=>{lim+=200;render()};
+const sortBy=e=>{const th=e.target.closest('th[data-k]');if(!th)return;const k=th.dataset.k;sort=sort.k===k?{k,d:-sort.d}:{k,d:1};render();};
+$('#tbl').onclick=sortBy;$('#tbl').onkeydown=e=>{if(e.key==='Enter')sortBy(e)};
+
+$('#delim').value=S.opt.delim;$('#join').value=S.opt.join;
+$('#nested').checked=S.opt.nested;$('#bomchk').checked=S.opt.bom;$('#safe').checked=S.opt.safe;
+$('#delim').onchange=e=>{S.opt.delim=e.target.value;save()};
+$('#join').onchange=e=>{S.opt.join=e.target.value;save();render();};
+$('#nested').onchange=e=>{S.opt.nested=e.target.checked;save();if(bom)rebuild();};
+$('#bomchk').onchange=e=>{S.opt.bom=e.target.checked;save()};
+$('#safe').onchange=e=>{S.opt.safe=e.target.checked;save()};
+
+$('#dl').onclick=()=>{
+  const{cols,rows}=view(),blob=new Blob([(S.opt.bom?'\ufeff':'')+toCsv(cols,rows)],{type:'text/csv;charset=utf-8'}),a=document.createElement('a');
+  a.href=URL.createObjectURL(blob);a.download=`${bomName}-${S.entity}.csv`;a.click();setTimeout(()=>URL.revokeObjectURL(a.href),1000);
+};
+$('#cp').onclick=()=>{const{cols,rows}=view();
+  navigator.clipboard.writeText(toCsv(cols,rows)).then(()=>msg('CSV copied to the clipboard.'),()=>msg('Copy failed. Use Download CSV instead.',true));};
+
+const th=$('#theme'),setLbl=()=>{th.textContent=document.documentElement.dataset.theme==='dark'?'Light mode':'Dark mode'};
+th.onclick=()=>{const t=document.documentElement.dataset.theme==='dark'?'light':'dark';document.documentElement.dataset.theme=t;try{localStorage.setItem('cdx2csv-theme',t)}catch(_){}setLbl();};
+setLbl();
+</script>
+</body>
+</html>
